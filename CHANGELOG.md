@@ -2,6 +2,7 @@
 
 ## 2026-02-05
 
+- Added free tier notice: No API key required for up to 100 requests per day.
 - Announced repository rename from `cybrlab-ai/url-scanner-mcp` to `cybrlab-ai/urlcheck-mcp`.
 - Set `https://github.com/cybrlab-ai/urlcheck-mcp` as the canonical repository URL.
 - Noted collaborator remote update commands:

@@ -4,6 +4,8 @@
 
 **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
 
+**Free Tier:** No API key required for up to 100 requests per day. For higher volumes, contact [contact@cybrlab.ai](mailto:contact@cybrlab.ai).
+
 ---
 
 ## Repository Rename Notice
