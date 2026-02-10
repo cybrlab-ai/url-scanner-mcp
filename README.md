@@ -27,13 +27,16 @@ Do not create a new repository at the old name (`url-scanner-mcp`) to avoid brea
 
 URLCheck is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
 
-## OpenClaw Quick Start (Manual-First)
+## Integrations
 
-OpenClaw users can connect URLCheck through their existing MCP bridge/adapter plugin.
+URLCheck works with any MCP-compatible client. For framework-specific adapters:
 
-- Setup guide: [OpenClaw Setup](docs/OPENCLAW_SETUP.md)
-- No ClawHub skill required
-- Hosted endpoint: `https://urlcheck.ai/mcp`
+| Integration           | Repository                                                             |
+|-----------------------|------------------------------------------------------------------------|
+| LangChain / LangGraph | [langchain-urlcheck](https://github.com/cybrlab-ai/langchain-urlcheck) |
+| OpenClaw plugin       | [urlcheck-openclaw](https://github.com/cybrlab-ai/urlcheck-openclaw)   |
+
+For manual MCP bridge configuration (any client), see [Quick Start](#quick-start) below.
 
 ## Authentication Modes
 

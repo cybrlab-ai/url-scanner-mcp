@@ -8,6 +8,8 @@
   - `destructiveHint: false`
   - `openWorldHint: true`
 - Aligned runtime MCP metadata so `tools/list` now returns the same safety annotations for both scanner tools.
+- Replaced OpenClaw-specific setup guide with Integrations section linking to downstream repos.
+- Removed `docs/OPENCLAW_SETUP.md` (setup docs now live in each integration's own repository).
 
 ## 2026-02-07
 
