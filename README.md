@@ -1,5 +1,7 @@
 # URLCheck MCP Server
 
+[![smithery badge](https://smithery.ai/badge/cybrlab-ai/urlcheck-mcp)](https://smithery.ai/server/cybrlab-ai/urlcheck-mcp)
+
 > **MCP-native URL security scanner that protects AI agent workflows — analyzes threats and verifies URLs align with the agent's intended goal.**
 
 **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
