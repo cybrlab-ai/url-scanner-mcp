@@ -2,7 +2,7 @@
 
 [![smithery badge](https://smithery.ai/badge/cybrlab-ai/urlcheck-mcp)](https://smithery.ai/server/cybrlab-ai/urlcheck-mcp)
 
-> **MCP-native URL security scanner that protects AI agent workflows — analyzes threats and verifies URLs align with the agent's intended goal.**
+> **An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
 
 **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
 
@@ -188,8 +188,9 @@ curl -X POST https://urlcheck.ai/mcp \
   }'
 ```
 
-Recommendation: Use `url_scanner_scan_with_intent` when you can state your purpose (login, purchase, booking, payments, file download)—this enables detection of sites that don't match the stated intent. Otherwise use `url_scanner_scan`.
+Recommendation: Use `url_scanner_scan_with_intent` when you can state your purpose (login, purchase, booking, payments, file download) so intent/content mismatch can be considered as an additional signal. Otherwise use `url_scanner_scan`.
 Max intent length: 248 characters.
+Result includes `intent_alignment` (`misaligned`, `no_mismatch_detected`, `inconclusive`, or `not_provided`).
 
 Direct-call timeout note: synchronous tool calls use a bounded server wait window (hosted default 100s). If timeout is reached, the server returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval` so you can continue via `tasks/get` / `tasks/result`.
 
@@ -224,7 +225,8 @@ Response (completed task with agent directive):
       "confidence": 0.95,
       "analysis_complete": true,
       "agent_access_directive": "ALLOW",
-      "agent_access_reason": "clean"
+      "agent_access_reason": "clean",
+      "intent_alignment": "not_provided"
     },
     "summary": "URL scan completed"
   }

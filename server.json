@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "ai.urlcheck/urlcheck-mcp",
-  "title": "MCP-native URL security scanner that protects AI agent workflows.",
-  "description": "Analyzes threats and verifies URLs align with the agent's intended goal.",
-  "version": "0.1.2",
+  "title": "An MCP-native URL preflight scanning service for autonomous agents.",
+  "description": "Scans links for threats and confirms intent alignment with high accuracy.",
+  "version": "0.1.3",
   "websiteUrl": "https://urlcheck.dev",
   "publisher": {
     "name": "CybrLab.ai",
@@ -34,7 +34,7 @@
   "tools": [
     {
       "name": "url_scanner_scan",
-      "description": "Analyze a URL for security threats including phishing, malware, and suspicious patterns. Supports direct (sync) and task-augmented (async) execution. Returns risk score, confidence, and agent access guidance.",
+      "description": "Analyze a URL for security threats including phishing, malware, and suspicious patterns. Supports direct (sync) and task-augmented (async) execution. Returns risk score, confidence, agent access guidance, and intent_alignment (always not_provided for this tool; use url_scanner_scan_with_intent for intent context).",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -53,7 +53,7 @@
     },
     {
       "name": "url_scanner_scan_with_intent",
-      "description": "Analyze a URL for security threats with user intent context. Supports direct (sync) and task-augmented (async) execution. Use when the user states their purpose (e.g., login, purchase, booking)—this enables detection of sites that don't match the stated intent. Returns risk score, confidence, and agent access guidance.",
+      "description": "Analyze a URL for security threats with optional user intent context. Supports direct (sync) and task-augmented (async) execution. Use when the user states their purpose (e.g., login, purchase, booking) so intent/content mismatch can be considered as an additional signal. Returns risk score, confidence, agent access guidance, and intent_alignment.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,

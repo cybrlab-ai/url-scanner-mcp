@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-02-17
+
+- Updated `tools/list` descriptions for both scanner tools to reference the `intent_alignment` response field.
+- Added `intent_alignment` field to direct-call (synchronous) scan responses, aligning them with task-augmented responses.
+
 ## 2026-02-15
 
 - Changed default `wait_timeout_secs` from 300 to 100 seconds for direct calls and `tasks/result` blocking wait.

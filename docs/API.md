@@ -1,6 +1,6 @@
 # URLCheck MCP Server - API Documentation
 
-> **High-accuracy MCP-native URL scanner for Safe Agentic Browsing**
+> **An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
 
 > **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
 
@@ -173,7 +173,7 @@ When the `task` parameter is omitted, returns the scan result directly (synchron
   "content": [
     {
       "type": "text",
-      "text": "{\"risk_score\":0.15,\"confidence\":0.92,\"analysis_complete\":true,\"agent_access_directive\":\"ALLOW\",\"agent_access_reason\":\"clean\"}"
+      "text": "{\"risk_score\":0.15,\"confidence\":0.92,\"analysis_complete\":true,\"agent_access_directive\":\"ALLOW\",\"agent_access_reason\":\"clean\",\"intent_alignment\":\"not_provided\"}"
     }
   ]
 }
@@ -249,14 +249,20 @@ If an upstream edge/proxy timeout fires first (for example Cloudflare 524), this
 ### url_scanner_scan_with_intent
 
 Start a URL security scan with optional user intent context. This tool behaves like `url_scanner_scan`
-but accepts a recommended `intent` field that can significantly improve accuracy when aligned with substantive page evidence.
+but accepts a recommended `intent` field that can improve detection when aligned with substantive page evidence.
 
 Recommended use: provide `intent` when the user can state their purpose (e.g., login, purchase, booking, payments, file download).
-This helps compare intended purpose against observed page content.
+This helps compare intended purpose against observed page content as an additional contextual signal.
 
 If `intent` is omitted or empty, the scan proceeds normally.
 
 **Max intent length:** 248 characters.
+
+Scan results include `intent_alignment` in both direct-call and task-result responses:
+- `misaligned`: page purpose appears to conflict with stated intent
+- `no_mismatch_detected`: no explicit mismatch signal detected from available evidence
+- `inconclusive`: evidence is limited or intent cannot be verified reliably
+- `not_provided`: no intent was supplied
 
 #### Input Schema
 
@@ -362,7 +368,8 @@ Wait for task completion and return the tool result.
     "confidence": 0.75,
     "analysis_complete": true,
     "agent_access_directive": "DENY",
-    "agent_access_reason": "suspicious"
+    "agent_access_reason": "suspicious",
+    "intent_alignment": "not_provided"
   },
   "summary": "URL scan completed"
 }
@@ -591,7 +598,7 @@ Request validation errors return JSON-RPC errors:
 
 ### URL Validation Early-Exit Results (Task-Level)
 
-URL validation happens **after** task creation. Invalid URLs produce a **completed task result** with `agent_access_directive` and `agent_access_reason`:
+URL validation happens **after** task creation. Invalid URLs produce a **completed task result** with `agent_access_directive`, `agent_access_reason`, and `intent_alignment`:
 
 | Validation Result  | Example Reason    | Notes      |
 |--------------------|-------------------|------------|
