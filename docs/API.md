@@ -551,6 +551,7 @@ URL validation runs **after** task creation and produces a completed task result
 
 Typical reasons include:
 - `invalid_url`, `invalid_scheme`, `missing_host`
+- `local_network_only`, `reserved_domain`, `tor_network_only`, `overlay_network_only`
 
 Additional security validation reasons may be returned.
 
@@ -600,11 +601,15 @@ Request validation errors return JSON-RPC errors:
 
 URL validation happens **after** task creation. Invalid URLs produce a **completed task result** with `agent_access_directive`, `agent_access_reason`, and `intent_alignment`:
 
-| Validation Result  | Example Reason    | Notes      |
-|--------------------|-------------------|------------|
-| Too short/too long | `invalid_url`     | Early exit |
-| Invalid scheme     | `invalid_scheme`  | Early exit |
-| Missing host       | `missing_host`    | Early exit |
+| Validation Result                           | Example Reason         | Notes                                  |
+|---------------------------------------------|------------------------|----------------------------------------|
+| Too short/too long                          | `invalid_url`          | Early exit                             |
+| Invalid scheme                              | `invalid_scheme`       | Early exit                             |
+| Missing host                                | `missing_host`         | Early exit                             |
+| `.local`/`.internal`/`.home.arpa` domain    | `local_network_only`   | Early exit (local/private network)     |
+| `.test`/`.invalid`/`.example`/`.alt` domain | `reserved_domain`      | Early exit (reserved domain namespace) |
+| `.onion` domain                             | `tor_network_only`     | Early exit (Tor network)               |
+| `.i2p` domain                               | `overlay_network_only` | Early exit (I2P overlay network)       |
 
 ---
 
