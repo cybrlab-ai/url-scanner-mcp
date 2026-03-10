@@ -1,8 +1,8 @@
-# URLCheck MCP Server - API Documentation
+# PreClick MCP Server - API Documentation (formerly URLCheck)
 
-> **An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
+> **PreClick — An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
 
-> **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
+> **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [PreClick](https://preclick.ai)
 
 ---
 
@@ -33,7 +33,7 @@
 
 ## Overview
 
-The URLCheck MCP Server provides AI-powered malicious URL detection through the Model Context Protocol (MCP). 
+The PreClick MCP Server (formerly URLCheck) provides AI-powered malicious URL detection through the Model Context Protocol (MCP).
 
 ### Key Characteristics
 
@@ -253,16 +253,24 @@ but accepts a recommended `intent` field that can improve detection when aligned
 
 Recommended use: provide `intent` when the user can state their purpose (e.g., login, purchase, booking, payments, file download).
 This helps compare intended purpose against observed page content as an additional contextual signal.
+Security verdict remains primary; intent matching does not override security evidence.
 
 If `intent` is omitted or empty, the scan proceeds normally.
+Low-information or instruction-like intent strings (for example placeholders like `test`/`n/a`, or prompt-control text) are treated as not provided.
 
 **Max intent length:** 248 characters.
 
 Scan results include `intent_alignment` in both direct-call and task-result responses:
 - `misaligned`: page purpose appears to conflict with stated intent
-- `no_mismatch_detected`: no explicit mismatch signal detected from available evidence
+- `no_mismatch_detected`: no explicit mismatch signal detected from available evidence, and intent analysis was available
 - `inconclusive`: evidence is limited or intent cannot be verified reliably
 - `not_provided`: no intent was supplied
+
+Policy behavior for intent mismatch:
+- When `intent_alignment = misaligned` is confirmed by successful high-confidence analysis, `agent_access_directive` is set to `DENY` with `agent_access_reason = intent_mismatch` even if `risk_score` is low.
+- When high-confidence analysis confirms an unverified high-impact service claim (e.g., financial, healthcare, legal, government-facing) with weak identity corroboration in a low-confidence context, `agent_access_directive` is set to `DENY` with `agent_access_reason = unverified_high_impact_claim` while `risk_score` remains unchanged.
+- In additional contextual high-impact policy cases, `agent_access_directive` can also be `DENY` with `agent_access_reason = high_impact_claim_contextual` while `risk_score` remains unchanged.
+- This is a policy gate; the security `risk_score` remains unchanged.
 
 #### Input Schema
 
@@ -453,6 +461,8 @@ Use `agent_access_directive` for access decisions. It translates the risk score 
 - `RETRY_LATER` — Temporary failure (connection error, rate limited)
 - `REQUIRE_CREDENTIALS` — Authentication required
 
+`agent_access_reason` includes values such as `clean`, `suspicious`, `blocklisted`, validation/network reasons, `intent_mismatch` (policy denial when intent mismatch is confirmed), `unverified_high_impact_claim` (policy denial when high-impact identity corroboration is not enough), and `high_impact_claim_contextual` (policy denial in additional contextual high-impact claim cases).
+
 ---
 
 ## HTTP Status Codes
@@ -473,7 +483,7 @@ The MCP server follows the MCP 2025-06-18 specification for HTTP status codes.
 |------|------------------------|-------------------------------------------------------------|
 | 400  | Bad Request            | Invalid JSON, missing headers, invalid protocol version     |
 | 401  | Unauthorized           | Missing/invalid `X-API-Key` when authentication is required |
-| 403  | Forbidden              | CORS origin rejected or IP blocked                          |
+| 403  | Forbidden              | Origin not permitted                                        |
 | 404  | Not Found              | Unknown/expired session ID, wrong endpoint                  |
 | 413  | Payload Too Large      | Request body exceeds size limit                             |
 | 415  | Unsupported Media Type | Missing or wrong `Content-Type` header                      |
@@ -552,6 +562,8 @@ URL validation runs **after** task creation and produces a completed task result
 Typical reasons include:
 - `invalid_url`, `invalid_scheme`, `missing_host`
 - `local_network_only`, `reserved_domain`, `tor_network_only`, `overlay_network_only`
+- `connection_failed` (temporary network/DNS infrastructure issue, retryable)
+- `dns_failed` (authoritative DNS failure such as NXDOMAIN/no records)
 
 Additional security validation reasons may be returned.
 
@@ -583,7 +595,7 @@ Malformed requests (missing `url` or wrong types) still return `-32602 Invalid p
 | 401         | Empty body    | —    | No API key provided (when required) |
 | 401         | Empty body    | —    | API key not recognized              |
 | 401         | Empty body    | —    | API key has expired                 |
-| 403         | Empty body    | —    | CORS origin rejected                |
+| 403         | Empty body    | —    | Origin not permitted                |
 | 429         | Empty body    | —    | Transport rate limited              |
 
 ### Request Validation Errors (Request-Level)
@@ -601,15 +613,17 @@ Request validation errors return JSON-RPC errors:
 
 URL validation happens **after** task creation. Invalid URLs produce a **completed task result** with `agent_access_directive`, `agent_access_reason`, and `intent_alignment`:
 
-| Validation Result                           | Example Reason         | Notes                                  |
-|---------------------------------------------|------------------------|----------------------------------------|
-| Too short/too long                          | `invalid_url`          | Early exit                             |
-| Invalid scheme                              | `invalid_scheme`       | Early exit                             |
-| Missing host                                | `missing_host`         | Early exit                             |
-| `.local`/`.internal`/`.home.arpa` domain    | `local_network_only`   | Early exit (local/private network)     |
-| `.test`/`.invalid`/`.example`/`.alt` domain | `reserved_domain`      | Early exit (reserved domain namespace) |
-| `.onion` domain                             | `tor_network_only`     | Early exit (Tor network)               |
-| `.i2p` domain                               | `overlay_network_only` | Early exit (I2P overlay network)       |
+| Validation Result                               | Example Reason         | Notes                                  |
+|-------------------------------------------------|------------------------|----------------------------------------|
+| Too short/too long                              | `invalid_url`          | Early exit                             |
+| Invalid scheme                                  | `invalid_scheme`       | Early exit                             |
+| Missing host                                    | `missing_host`         | Early exit                             |
+| `.local`/`.internal`/`.home.arpa` domain        | `local_network_only`   | Early exit (local/private network)     |
+| `.test`/`.invalid`/`.example`/`.alt` domain     | `reserved_domain`      | Early exit (reserved domain namespace) |
+| `.onion` domain                                 | `tor_network_only`     | Early exit (Tor network)               |
+| `.i2p` domain                                   | `overlay_network_only` | Early exit (I2P overlay network)       |
+| Temporary DNS/connection infrastructure failure | `connection_failed`    | Early exit (transient, retry later)    |
+| Authoritative DNS NXDOMAIN/no-records           | `dns_failed`           | Early exit (domain not resolvable)     |
 
 ---
 
@@ -674,5 +688,5 @@ Transport-level rate limiting returns HTTP 429 without a JSON-RPC body.
 
 For API keys, support, or questions:
 - **Publisher**: [CybrLab.ai](https://cybrlab.ai)
-- **Service**: [URLCheck](https://urlcheck.dev)
+- **Service**: [PreClick](https://preclick.ai)
 - **Email**: contact@cybrlab.ai

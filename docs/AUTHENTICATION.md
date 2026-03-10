@@ -1,8 +1,8 @@
 # Authentication Guide
 
-> How to get and use API keys for the URL Security Scanner MCP Server
+> How to get and use API keys for the PreClick MCP Server (formerly URLCheck)
 
-**Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
+**Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [PreClick](https://preclick.ai)
 
 ---
 
@@ -101,7 +101,7 @@ response body is empty.
 | HTTP Status | Response Type | Body | Description                                     |
 |-------------|---------------|------|-------------------------------------------------|
 | 401         | Empty body    | n/a  | Missing/invalid/expired API key (when required) |
-| 403         | Empty body    | n/a  | Origin or IP blocked                            |
+| 403         | Empty body    | n/a  | Origin not permitted                            |
 | 429         | Empty body    | n/a  | Transport rate limited                          |
 
 ### Error Response Example

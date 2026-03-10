@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4 — 2026-03-10
+
+- Rebranded service from **URLCheck** to **PreClick** (formerly URLCheck) across all public artifacts.
+- Updated service website from `urlcheck.dev` to `https://preclick.ai`.
+- Added `"preclick"` tag to `server.json`.
+- Registry ID (`ai.urlcheck/urlcheck-mcp`), endpoint (`urlcheck.ai/mcp`), repository URLs, and tool names remain unchanged for backward compatibility.
+- Added policy override behavior for intent scans: when `intent_alignment` is `misaligned` and confirmed by successful high-confidence analysis, responses return `agent_access_directive: "DENY"` with `agent_access_reason: "intent_mismatch"` while preserving `risk_score`.
+- Added high-impact claim policy overrides: `agent_access_reason: "unverified_high_impact_claim"` and `agent_access_reason: "high_impact_claim_contextual"`. `risk_score` is preserved.
+- Bumped MCP manifest version to `0.1.4`.
+
 ## 2026-02-17
 
 - Updated `tools/list` descriptions for both scanner tools to reference the `intent_alignment` response field.

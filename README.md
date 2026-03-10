@@ -1,10 +1,10 @@
-# URLCheck MCP Server
+# PreClick MCP Server (formerly URLCheck)
 
 [![smithery badge](https://smithery.ai/badge/cybrlab-ai/urlcheck-mcp)](https://smithery.ai/server/cybrlab-ai/urlcheck-mcp)
 
-> **An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
+> **PreClick — An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
 
-**Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [URLCheck](https://urlcheck.dev)
+**Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [PreClick](https://preclick.ai)
 
 **Hosted Trial Tier:** No API key required for up to 100 requests/day. For higher limits and stable quotas, use an API key (contact [contact@cybrlab.ai](mailto:contact@cybrlab.ai)).
 
@@ -27,11 +27,11 @@ Do not create a new repository at the old name (`url-scanner-mcp`) to avoid brea
 
 ## Overview
 
-URLCheck is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
+PreClick (formerly URLCheck) is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
 
 ## Integrations
 
-URLCheck works with any MCP-compatible client. For framework-specific adapters:
+PreClick works with any MCP-compatible client. For framework-specific adapters:
 
 | Integration           | Repository                                                             |
 |-----------------------|------------------------------------------------------------------------|
@@ -190,7 +190,12 @@ curl -X POST https://urlcheck.ai/mcp \
 
 Recommendation: Use `url_scanner_scan_with_intent` when you can state your purpose (login, purchase, booking, payments, file download) so intent/content mismatch can be considered as an additional signal. Otherwise use `url_scanner_scan`.
 Max intent length: 248 characters.
+Low-information or instruction-like intent strings are treated as not provided.
 Result includes `intent_alignment` (`misaligned`, `no_mismatch_detected`, `inconclusive`, or `not_provided`).
+`no_mismatch_detected` is only returned when intent analysis had sufficient evidence; if intent analysis is unavailable or evidence is limited, result is `inconclusive`.
+When `intent_alignment` is `misaligned` and confirmed by successful high-confidence analysis, the response directive is `DENY` with reason `intent_mismatch` (policy gate; risk score is unchanged).
+When high-confidence analysis confirms an unverified high-impact service claim with weak identity corroboration in a low-confidence context, the response directive is also `DENY` with reason `unverified_high_impact_claim` (policy gate; risk score is unchanged).
+In additional contextual high-impact policy cases, responses may return `DENY` with reason `high_impact_claim_contextual` (policy gate; risk score is unchanged).
 
 Direct-call timeout note: synchronous tool calls use a bounded server wait window (hosted default 100s). If timeout is reached, the server returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval` so you can continue via `tasks/get` / `tasks/result`.
 
@@ -275,7 +280,7 @@ See [Authentication Guide](docs/AUTHENTICATION.md) for details on getting API ke
 ## Support
 
 - **Publisher**: [CybrLab.ai](https://cybrlab.ai)
-- **Service**: [URLCheck](https://urlcheck.dev)
+- **Service**: [PreClick](https://preclick.ai)
 - **Email**: contact@cybrlab.ai
 
 ---
