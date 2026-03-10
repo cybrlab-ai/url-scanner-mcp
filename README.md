@@ -10,21 +10,6 @@
 
 ---
 
-## Repository Rename Notice
-
-This repository was renamed from `cybrlab-ai/url-scanner-mcp` to `cybrlab-ai/urlcheck-mcp`.
-
-- Canonical repository URL: `https://github.com/cybrlab-ai/urlcheck-mcp`
-- Canonical Git remote: `git@github.com:cybrlab-ai/urlcheck-mcp.git`
-- GitHub Action consumers must update `uses:` references to `cybrlab-ai/urlcheck-mcp@...` (old action paths are not guaranteed to redirect)
-- Collaborators should update local remotes:
-  - `git remote set-url origin git@github.com:cybrlab-ai/urlcheck-mcp.git`
-  - `git fetch origin --verbose`
-
-Do not create a new repository at the old name (`url-scanner-mcp`) to avoid breaking GitHub redirect behavior.
-
----
-
 ## Overview
 
 PreClick (formerly URLCheck) is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
@@ -70,7 +55,7 @@ Trial (hosted, up to 100 requests/day without API key):
 ```json
 {
   "mcpServers": {
-    "urlcheck-mcp": {
+    "preclick-mcp": {
       "transport": "streamable-http",
       "url": "https://urlcheck.ai/mcp"
     }
@@ -83,7 +68,7 @@ Authenticated (recommended for stable and higher-volume usage):
 ```json
 {
   "mcpServers": {
-    "urlcheck-mcp": {
+    "preclick-mcp": {
       "transport": "streamable-http",
       "url": "https://urlcheck.ai/mcp",
       "headers": {

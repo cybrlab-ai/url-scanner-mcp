@@ -3,7 +3,7 @@
   "name": "ai.urlcheck/urlcheck-mcp",
   "title": "PreClick — An MCP-native URL preflight scanning service for autonomous agents (formerly URLCheck).",
   "description": "PreClick scans links for threats and confirms intent alignment with high accuracy before agents click.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "websiteUrl": "https://preclick.ai",
   "publisher": {
     "name": "CybrLab.ai",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "source": "github",
-    "url": "https://github.com/cybrlab-ai/urlcheck-mcp"
+    "url": "https://github.com/cybrlab-ai/preclick-mcp"
   },
   "license": "Apache-2.0",
   "privacyPolicyUrl": "https://cybrlab.ai/privacy-policy",
