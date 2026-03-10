@@ -1,4 +1,4 @@
-# PreClick MCP Server (formerly URLCheck)
+# PreClick MCP Server
 
 [![smithery badge](https://smithery.ai/badge/cybrlab-ai/urlcheck-mcp)](https://smithery.ai/server/cybrlab-ai/urlcheck-mcp)
 
@@ -12,7 +12,7 @@
 
 ## Overview
 
-PreClick (formerly URLCheck) is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
+PreClick is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
 
 ## Integrations
 
@@ -251,7 +251,7 @@ See [Authentication Guide](docs/AUTHENTICATION.md) for details on getting API ke
 
 | Property          | Value                      |
 |-------------------|----------------------------|
-| Registry ID       | `ai.urlcheck/urlcheck-mcp` |
+| Registry ID       | `ai.preclick/preclick-mcp` |
 | MCP Spec          | 2025-06-18                 |
 | Client Protocol   | 2025-06-18                 |
 | Transport         | Streamable HTTP            |

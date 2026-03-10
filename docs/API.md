@@ -1,4 +1,4 @@
-# PreClick MCP Server - API Documentation (formerly URLCheck)
+# PreClick MCP Server - API Documentation
 
 > **PreClick — An MCP-native URL preflight scanning service for autonomous agents. It scans links for threats and confirms they match the intended task before execution. Built for agentic workflows, it provides high-accuracy, context-aware browsing governance with adaptive learning.**
 
@@ -33,7 +33,7 @@
 
 ## Overview
 
-The PreClick MCP Server (formerly URLCheck) provides AI-powered malicious URL detection through the Model Context Protocol (MCP).
+The PreClick MCP Server provides AI-powered malicious URL detection through the Model Context Protocol (MCP).
 
 ### Key Characteristics
 

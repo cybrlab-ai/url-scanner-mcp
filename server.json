@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "ai.urlcheck/urlcheck-mcp",
-  "title": "PreClick — An MCP-native URL preflight scanning service for autonomous agents (formerly URLCheck).",
+  "name": "ai.preclick/preclick-mcp",
+  "title": "PreClick — An MCP-native URL preflight scanning service for autonomous agents.",
   "description": "PreClick scans links for threats and confirms intent match with high accuracy before agents click.",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "websiteUrl": "https://preclick.ai",
   "publisher": {
     "name": "CybrLab.ai",

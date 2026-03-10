@@ -1,6 +1,6 @@
 # Authentication Guide
 
-> How to get and use API keys for the PreClick MCP Server (formerly URLCheck)
+> How to get and use API keys for the PreClick MCP Server
 
 **Publisher:** [CybrLab.ai](https://cybrlab.ai) | **Service:** [PreClick](https://preclick.ai)
 

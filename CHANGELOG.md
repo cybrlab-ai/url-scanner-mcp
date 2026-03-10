@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — 2026-03-10
+
+- Breaking change: updated MCP Registry ID from `ai.urlcheck/urlcheck-mcp` to `ai.preclick/preclick-mcp`.
+- Hard cutover: old registry ID is retired and no longer maintained.
+- Bumped MCP manifest version to `0.2.0`.
+
 ## 0.1.5 — 2026-03-10
 
 - Updated `server.json` repository URL to `https://github.com/cybrlab-ai/preclick-mcp` after the GitHub repo rename.
@@ -7,7 +13,7 @@
 
 ## 0.1.4 — 2026-03-10
 
-- Rebranded service from **URLCheck** to **PreClick** (formerly URLCheck) across all public artifacts.
+- Rebranded service from **URLCheck** to **PreClick** across all public artifacts.
 - Updated service website from `urlcheck.dev` to `https://preclick.ai`.
 - Added `"preclick"` tag to `server.json`.
 - Renamed GitHub repository from `cybrlab-ai/urlcheck-mcp` to `cybrlab-ai/preclick-mcp`.
