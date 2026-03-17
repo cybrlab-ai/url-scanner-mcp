@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: Requires an MCP client with Streamable HTTP transport support and network access to https://preclick.ai/mcp
 metadata:
   author: cybrlab-ai
-  version: 0.2.0
+  version: 0.3.0
   service: preclick.ai
   registry-id: ai.preclick/preclick-mcp
 ---

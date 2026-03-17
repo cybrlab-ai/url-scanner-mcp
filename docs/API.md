@@ -175,7 +175,8 @@ When the `task` parameter is omitted, returns the scan result directly (synchron
       "type": "text",
       "text": "{\"risk_score\":0.15,\"confidence\":0.92,\"analysis_complete\":true,\"agent_access_directive\":\"ALLOW\",\"agent_access_reason\":\"no_immediate_risk_detected\",\"intent_alignment\":\"not_provided\"}"
     }
-  ]
+  ],
+  "isError": false
 }
 ```
 
@@ -327,17 +328,17 @@ Get task status (non-blocking). Task IDs are scoped to the API key that created 
 
 #### Output Schema
 
+Task fields are flattened at the result level (not nested under a `task` key):
+
 ```json
 {
-  "task": {
-    "taskId": "550e8400-e29b-41d4-a716-446655440000",
-    "status": "working",
-    "statusMessage": "Queued for processing",
-    "createdAt": "2026-01-18T12:00:00Z",
-    "lastUpdatedAt": "2026-01-18T12:00:00Z",
-    "ttl": 720000,
-    "pollInterval": 2000
-  }
+  "taskId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "statusMessage": "Queued for processing",
+  "createdAt": "2026-01-18T12:00:00Z",
+  "lastUpdatedAt": "2026-01-18T12:00:00Z",
+  "ttl": 720000,
+  "pollInterval": 2000
 }
 ```
 
@@ -368,18 +369,17 @@ Wait for task completion and return the tool result.
 
 #### Output Schema (Success)
 
+The result matches the `CallToolResult` shape (same as a synchronous `tools/call` response):
+
 ```json
 {
-  "contentType": "application/json",
-  "value": {
-    "risk_score": 0.65,
-    "confidence": 0.75,
-    "analysis_complete": true,
-    "agent_access_directive": "DENY",
-    "agent_access_reason": "elevated_risk_signals",
-    "intent_alignment": "not_provided"
-  },
-  "summary": "URL scan completed"
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"risk_score\":0.65,\"confidence\":0.75,\"analysis_complete\":true,\"agent_access_directive\":\"DENY\",\"agent_access_reason\":\"elevated_risk_signals\",\"intent_alignment\":\"not_provided\"}"
+    }
+  ],
+  "isError": false
 }
 ```
 
@@ -443,8 +443,18 @@ Cancel a queued or running task.
 
 #### Output Schema
 
+Returns the cancelled task with flattened fields (same shape as `tasks/get`):
+
 ```json
-{}
+{
+  "taskId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "cancelled",
+  "statusMessage": "Task cancelled",
+  "createdAt": "2026-01-18T12:00:00Z",
+  "lastUpdatedAt": "2026-01-18T12:00:05Z",
+  "ttl": 720000,
+  "pollInterval": 2000
+}
 ```
 
 ---

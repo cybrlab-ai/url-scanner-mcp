@@ -1,8 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-03-17
+
+- **Breaking:** Task response wire formats changed:
+  - `tasks/get` and `tasks/cancel` now return flattened task fields at the result level (no nested `task` wrapper).
+  - `tasks/result` now returns `CallToolResult` shape (`content` array with `isError`) instead of `contentType`/`value`/`summary`.
+- Updated `tasks` capability in server manifest to include `requests.tools.call` and use object notation for `list`/`cancel`.
+
 ## 0.2.0 — 2026-03-11
 
-- Add Agent Skills SKILL.md.
 - Normalized public `agent_access_reason` values, stable codes such as `no_immediate_risk_detected`, `elevated_risk_signals`, `threat_intelligence_match`, `intent_inconsistent_destination`, `insufficient_service_verification`, and `insufficient_trust_signals`.
 
 ## 0.2.0 — 2026-03-10

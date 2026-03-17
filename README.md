@@ -203,22 +203,19 @@ curl -X POST https://preclick.ai/mcp \
 # If stateful mode is enabled, include: -H "Mcp-Session-Id: YOUR_SESSION_ID"
 ```
 
-Response (completed task with agent directive):
+Response (completed task — CallToolResult shape, same as synchronous `tools/call`):
 ```json
 {
   "jsonrpc": "2.0",
   "id": 3,
   "result": {
-    "contentType": "application/json",
-    "value": {
-      "risk_score": 0.05,
-      "confidence": 0.95,
-      "analysis_complete": true,
-      "agent_access_directive": "ALLOW",
-      "agent_access_reason": "no_immediate_risk_detected",
-      "intent_alignment": "not_provided"
-    },
-    "summary": "URL scan completed"
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"risk_score\":0.05,\"confidence\":0.95,\"analysis_complete\":true,\"agent_access_directive\":\"ALLOW\",\"agent_access_reason\":\"no_immediate_risk_detected\",\"intent_alignment\":\"not_provided\"}"
+      }
+    ],
+    "isError": false
   }
 }
 ```
