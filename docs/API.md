@@ -86,6 +86,8 @@ The server supports two modes:
 - **Stateless (default):** No session IDs. Only POST `/mcp` is used.
 - **Stateful:** Requires `initialize`, uses `Mcp-Session-Id`, enables GET/DELETE `/mcp`.
 
+Some Streamable HTTP clients may still probe `GET /mcp` before continuing with POST. In the default stateless deployment, that probe correctly returns `405 Method Not Allowed`.
+
 ### Example: Initialize Session (stateful mode only)
 
 ```bash

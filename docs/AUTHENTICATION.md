@@ -31,6 +31,7 @@ MCP-Protocol-Version: 2025-06-18
 If you are using hosted anonymous trial access, omit `X-API-Key` and stay within trial quota.
 
 **Stateful mode only:** If `server.stateful_mode = true`, include `Mcp-Session-Id` header after `initialize`.
+**Stateless mode (default):** Keep the POST `Accept: application/json, text/event-stream` header. Some clients may also probe `GET /mcp`; the server will return `405 Method Not Allowed` unless stateful mode is enabled.
 
 ### curl Example (Initialize Session - stateful mode only)
 

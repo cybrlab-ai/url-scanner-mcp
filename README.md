@@ -81,6 +81,8 @@ Authenticated (recommended for stable and higher-volume usage):
 
 ### 2. Optional: Initialize Session (stateful mode only)
 
+Default hosted usage is stateless and works with POST `/mcp` only. Some Streamable HTTP clients may still probe `GET /mcp`; in stateless mode the server correctly returns `405 Method Not Allowed` and the client should continue with POST.
+
 ```bash
 # Only required if the server is running in stateful mode
 curl -X POST https://preclick.ai/mcp \
