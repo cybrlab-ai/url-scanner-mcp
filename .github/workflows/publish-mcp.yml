@@ -1,0 +1,26 @@
+name: Publish to MCP Registry
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Authenticate with MCP Registry
+        run: ./mcp-publisher login dns --domain preclick.ai --private-key ${{ secrets.MCP_DNS_PRIVATE_KEY }}
+
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
