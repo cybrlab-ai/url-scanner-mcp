@@ -473,7 +473,7 @@ Use `agent_access_directive` for access decisions. It translates the risk score 
 - `RETRY_LATER` — Temporary failure (connection error, rate limited)
 - `REQUIRE_CREDENTIALS` — Authentication required
 
-`agent_access_reason` uses normalized public reason codes such as `no_immediate_risk_detected`, `elevated_risk_signals`, `threat_intelligence_match`, validation/network reasons, `intent_inconsistent_destination`, `insufficient_service_verification`, and `insufficient_trust_signals`.
+`agent_access_reason` uses normalized public reason codes such as `no_immediate_risk_detected`, `elevated_risk_signals`, `threat_intelligence_match`, `destination_not_found`, validation/network reasons, `intent_inconsistent_destination`, `insufficient_service_verification`, and `insufficient_trust_signals`.
 
 ---
 
@@ -576,6 +576,7 @@ Typical reasons include:
 - `local_network_target`, `non_public_domain`, `anonymous_network_target`, `overlay_network_target`
 - `connection_failed` (temporary network/DNS infrastructure issue, retryable)
 - `dns_resolution_failed` (authoritative DNS failure such as NXDOMAIN/no records)
+- `destination_not_found` (HTTP 404 detected at preflight and not recoverable by browser)
 
 Additional security validation reasons may be returned.
 
@@ -625,17 +626,19 @@ Request validation errors return JSON-RPC errors:
 
 URL validation happens **after** task creation. Invalid URLs produce a **completed task result** with `agent_access_directive`, `agent_access_reason`, and `intent_alignment`:
 
-| Validation Result                               | Example Reason         | Notes                                  |
-|-------------------------------------------------|------------------------|----------------------------------------|
-| Too short/too long                              | `invalid_url_input`            | Early exit                             |
-| Invalid scheme                                  | `unsupported_url_scheme`       | Early exit                             |
-| Missing host                                    | `missing_url_host`             | Early exit                             |
-| `.local`/`.internal`/`.home.arpa` domain        | `local_network_target`         | Early exit (local/private network)     |
-| `.test`/`.invalid`/`.example`/`.alt` domain     | `non_public_domain`            | Early exit (reserved domain namespace) |
-| `.onion` domain                                 | `anonymous_network_target`     | Early exit (Tor network)               |
-| `.i2p` domain                                   | `overlay_network_target`       | Early exit (I2P overlay network)       |
-| Temporary DNS/connection infrastructure failure | `connection_failed`            | Early exit (transient, retry later)    |
-| Authoritative DNS NXDOMAIN/no-records           | `dns_resolution_failed`        | Early exit (domain not resolvable)     |
+| Validation Result                                       | Example Reason             | Notes                                  |
+|---------------------------------------------------------|----------------------------|----------------------------------------|
+| Too short/too long                                      | `invalid_url_input`        | Early exit                             |
+| Invalid hostname syntax (for example `_` in host label) | `invalid_url_input`        | Early exit                             |
+| Invalid scheme                                          | `unsupported_url_scheme`   | Early exit                             |
+| Missing host                                            | `missing_url_host`         | Early exit                             |
+| `.local`/`.internal`/`.home.arpa` domain                | `local_network_target`     | Early exit (local/private network)     |
+| `.test`/`.invalid`/`.example`/`.alt` domain             | `non_public_domain`        | Early exit (reserved domain namespace) |
+| `.onion` domain                                         | `anonymous_network_target` | Early exit (Tor network)               |
+| `.i2p` domain                                           | `overlay_network_target`   | Early exit (I2P overlay network)       |
+| Temporary DNS/connection infrastructure failure         | `connection_failed`        | Early exit (transient, retry later)    |
+| Authoritative DNS NXDOMAIN/no-records                   | `dns_resolution_failed`    | Early exit (domain not resolvable)     |
+| HTTP 404 at preflight, not recovered by browser         | `destination_not_found`    | Deferred exit (page does not exist)    |
 
 ---
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — 2026-03-29
+
+- Added `destination_not_found` public reason code: `agent_access_directive` is set to `DENY` with `agent_access_reason = destination_not_found`.
+
 ## 0.3.0 — 2026-03-17
 
 - **Breaking:** Task response wire formats changed:
