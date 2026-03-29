@@ -3,7 +3,7 @@
   "name": "ai.preclick/preclick-mcp",
   "title": "PreClick — An MCP-native URL preflight scanning service for autonomous agents.",
   "description": "PreClick scans links for threats and confirms intent match with high accuracy before agents click.",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "websiteUrl": "https://preclick.ai",
   "publisher": {
     "name": "CybrLab.ai",
