@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.3.1 — 2026-03-29
+## 0.3.2 — 2026-03-29
+
+- Clarified hosted stateless transport behavior: `GET /mcp` returns HTTP `405 Method Not Allowed` because the endpoint does not offer an SSE stream in stateless mode.
+- Clarified that POST header normalization is a compatibility behavior, not a contract clients should rely on.
+
+## 0.3.1 — 2026-03-27
 
 - Added `destination_not_found` public reason code: `agent_access_directive` is set to `DENY` with `agent_access_reason = destination_not_found`.
 

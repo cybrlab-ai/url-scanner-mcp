@@ -81,7 +81,14 @@ Authenticated (recommended for stable and higher-volume usage):
 
 ### 2. Optional: Initialize Session (stateful mode only)
 
-Default hosted usage is stateless and works with POST `/mcp` only. Some Streamable HTTP clients may still probe `GET /mcp`; in stateless mode the server correctly returns `405 Method Not Allowed` and the client should continue with POST.
+Default hosted usage is stateless. Clients send JSON-RPC messages with `POST /mcp`.
+Some Streamable HTTP clients may also probe `GET /mcp` for an SSE stream. On the stateless hosted deployment, `/mcp` does not offer an SSE stream and returns HTTP `405 Method Not Allowed`. Clients should treat `405` as "no SSE stream on this endpoint" and continue using `POST /mcp`.
+
+Clients should still send the standard MCP HTTP headers:
+- `Accept: application/json, text/event-stream` on POST
+- `MCP-Protocol-Version` on all non-initialize requests
+
+The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should not rely on that behavior.
 
 ```bash
 # Only required if the server is running in stateful mode

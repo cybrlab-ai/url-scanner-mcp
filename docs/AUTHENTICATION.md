@@ -31,7 +31,13 @@ MCP-Protocol-Version: 2025-06-18
 If you are using hosted anonymous trial access, omit `X-API-Key` and stay within trial quota.
 
 **Stateful mode only:** If `server.stateful_mode = true`, include `Mcp-Session-Id` header after `initialize`.
-**Stateless mode (default):** Keep the POST `Accept: application/json, text/event-stream` header. Some clients may also probe `GET /mcp`; the server will return `405 Method Not Allowed` unless stateful mode is enabled.
+**Stateless mode (default):** Use `POST /mcp` for JSON-RPC messages. Some clients may also probe `GET /mcp` for an SSE stream; on the stateless hosted deployment, that request returns HTTP `405 Method Not Allowed`, which means the endpoint does not offer SSE and the client should continue with POST.
+
+Clients should still send:
+- `Accept: application/json, text/event-stream` on POST
+- `MCP-Protocol-Version` on all non-initialize requests
+
+The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should not rely on that behavior.
 
 ### curl Example (Initialize Session - stateful mode only)
 

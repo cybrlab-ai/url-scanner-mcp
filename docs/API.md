@@ -71,13 +71,17 @@ X-API-Key: your-api-key-here
 
 ### Required Headers
 
-| Header                 | Required                                                       | Description                                                           |
-|------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------|
-| `Content-Type`         | POST                                                           | Must be `application/json`                                            |
-| `Accept`               | POST/GET                                                       | POST: `application/json, text/event-stream`; GET: `text/event-stream` |
-| `X-API-Key`            | Hosted: optional up to trial quota; required above trial quota | API key for authenticated usage tiers                                 |
-| `Mcp-Session-Id`       | Stateful                                                       | Session ID returned by `initialize`                                   |
-| `MCP-Protocol-Version` | All non-initialize requests                                    | Protocol version (e.g., `2025-06-18`)                                 |
+| Header                 | Required                                                       | Description                                                                                                 |
+|------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `Content-Type`         | POST                                                           | Must be `application/json`                                                                                  |
+| `Accept`               | POST/GET                                                       | POST clients should send `application/json, text/event-stream`; GET clients should send `text/event-stream` |
+| `X-API-Key`            | Hosted: optional up to trial quota; required above trial quota | API key for authenticated usage tiers                                                                       |
+| `Mcp-Session-Id`       | Stateful                                                       | Session ID returned by `initialize`                                                                         |
+| `MCP-Protocol-Version` | All non-initialize requests                                    | Protocol version negotiated during initialization                                                           |
+
+Notes:
+- The hosted deployment is stateless by default, so `GET /mcp` is not used for normal operation.
+- The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should still send the standard MCP headers and must not rely on normalization.
 
 ### Session Management
 
@@ -86,7 +90,7 @@ The server supports two modes:
 - **Stateless (default):** No session IDs. Only POST `/mcp` is used.
 - **Stateful:** Requires `initialize`, uses `Mcp-Session-Id`, enables GET/DELETE `/mcp`.
 
-Some Streamable HTTP clients may still probe `GET /mcp` before continuing with POST. In the default stateless deployment, that probe correctly returns `405 Method Not Allowed`.
+Some Streamable HTTP clients may still probe `GET /mcp` before continuing with POST. In the default stateless deployment, `GET /mcp` is not an SSE endpoint and returns HTTP `405 Method Not Allowed`. This is a transport-level response, not a JSON-RPC error response.
 
 ### Example: Initialize Session (stateful mode only)
 
@@ -493,10 +497,11 @@ The MCP server follows the MCP 2025-06-18 specification for HTTP status codes.
 
 | Code | Status                 | When Returned                                               |
 |------|------------------------|-------------------------------------------------------------|
-| 400  | Bad Request            | Invalid JSON, missing headers, invalid protocol version     |
+| 400  | Bad Request            | Invalid JSON, malformed requests, or invalid protocol version |
 | 401  | Unauthorized           | Missing/invalid `X-API-Key` when authentication is required |
 | 403  | Forbidden              | Origin not permitted                                        |
 | 404  | Not Found              | Unknown/expired session ID, wrong endpoint                  |
+| 405  | Method Not Allowed     | `GET` or `DELETE` on stateless deployment                   |
 | 413  | Payload Too Large      | Request body exceeds size limit                             |
 | 415  | Unsupported Media Type | Missing or wrong `Content-Type` header                      |
 | 429  | Too Many Requests      | Rate limit exceeded                                         |
@@ -525,17 +530,13 @@ Rate limiting at the transport layer returns HTTP 429 without a JSON-RPC body:
 HTTP/1.1 429 Too Many Requests
 ```
 
-**400 Bad Request** (missing Accept header):
-```json
-{
-  "jsonrpc": "2.0",
-  "error": {
-    "code": -32600,
-    "message": "Missing Accept header. POST requests must include 'Accept: application/json, text/event-stream'"
-  },
-  "id": null
-}
+**405 Method Not Allowed** (`GET /mcp` on stateless deployment):
 ```
+HTTP/1.1 405 Method Not Allowed
+Allow: POST
+```
+
+Clients should interpret this as "this endpoint does not offer an SSE stream" and continue using `POST /mcp`.
 
 ---
 
