@@ -20,8 +20,7 @@ PreClick works with any MCP-compatible client. For framework-specific adapters:
 
 | Integration           | Repository                                                             |
 |-----------------------|------------------------------------------------------------------------|
-| LangChain / LangGraph | [langchain-urlcheck](https://github.com/cybrlab-ai/langchain-urlcheck) |
-| OpenClaw plugin       | [urlcheck-openclaw](https://github.com/cybrlab-ai/urlcheck-openclaw)   |
+| OpenClaw plugin       | [preclick-openclaw](https://github.com/cybrlab-ai/preclick-openclaw)   |
 
 For manual MCP bridge configuration (any client), see [Quick Start](#quick-start) below.
 
