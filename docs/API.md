@@ -14,6 +14,10 @@
 4. [Tools Reference](#tools-reference)
    - [url_scanner_scan](#url_scanner_scan)
    - [url_scanner_scan_with_intent](#url_scanner_scan_with_intent)
+   - [url_scanner_async_scan](#url_scanner_async_scan)
+   - [url_scanner_async_scan_with_intent](#url_scanner_async_scan_with_intent)
+   - [url_scanner_async_task_status](#url_scanner_async_task_status)
+   - [url_scanner_async_task_result](#url_scanner_async_task_result)
    - [tasks/get](#tasksget)
    - [tasks/result](#tasksresult)
    - [tasks/list](#taskslist)
@@ -37,10 +41,10 @@ The PreClick MCP Server provides AI-powered malicious URL detection through the 
 
 ### Key Characteristics
 
-| Property          | Value                            |
-|-------------------|----------------------------------|
-| Typical Scan Time | 30-90 seconds (varies by target) |
-| Supported Schemes | HTTP, HTTPS                      |
+| Property          | Value                                              |
+|-------------------|----------------------------------------------------|
+| Typical Scan Time | Around 70-80 seconds on current production traffic |
+| Supported Schemes | HTTP, HTTPS                                        |
 
 ---
 
@@ -118,16 +122,21 @@ curl -X POST https://preclick.ai/mcp \
 
 ### Tool Safety Annotations
 
-The two scanner tools are declared as read-only in `server.json`:
+All public tools are declared as read-only in `server.json`:
 
 - `readOnlyHint: true`
 - `destructiveHint: false`
-- `openWorldHint: true`
+- `openWorldHint: true` for scan submission tools
+- `openWorldHint: false` for compatibility polling tools
 
 These annotations are included for:
 
 - `url_scanner_scan`
 - `url_scanner_scan_with_intent`
+- `url_scanner_async_scan`
+- `url_scanner_async_scan_with_intent`
+- `url_scanner_async_task_status`
+- `url_scanner_async_task_result`
 
 These same annotations are also returned by the live MCP server in `tools/list` responses.
 
@@ -242,13 +251,13 @@ Omit the `task` parameter for synchronous execution:
 }
 ```
 
-**Direct Call Timeout:** Direct calls have a server-side wait timeout (deployment-configured; hosted default is **100 seconds**).
+**Direct Call Timeout:** Direct calls have a server-side wait timeout (deployment-configured; hosted default is **90 seconds**).
 
 On direct-call timeout, the server returns JSON-RPC `-32603` with:
 - `data.taskId` (use for recovery polling)
 - `data.pollInterval` (recommended polling interval, ms)
 
-For scans that may exceed this window, prefer task-augmented calls with polling.
+For scans that may exceed this window, prefer task-augmented calls with polling when your client can store task IDs.
 If an upstream edge/proxy timeout fires first (for example Cloudflare 524), this timeout payload may not reach the client.
 
 ---
@@ -320,6 +329,133 @@ Policy behavior for intent mismatch:
 
 ---
 
+### url_scanner_async_scan
+
+Compatibility submit tool for clients that cannot call native MCP Tasks methods.
+Call this as an ordinary tool only; do not include a native MCP `task` parameter.
+
+#### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "The URL to analyze. Must be HTTP or HTTPS. If no scheme provided, https:// is assumed."
+    }
+  },
+  "required": ["url"]
+}
+```
+
+#### Output Schema
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "created_at": "2026-01-18T12:00:00Z",
+  "updated_at": "2026-01-18T12:00:00Z",
+  "ttl_ms": 720000,
+  "poll_interval_ms": 2000,
+  "message": "Scan submitted. Poll with url_scanner_async_task_status or url_scanner_async_task_result."
+}
+```
+
+---
+
+### url_scanner_async_scan_with_intent
+
+Compatibility submit tool with optional intent context for clients that cannot call native MCP Tasks methods.
+Call this as an ordinary tool only; do not include a native MCP `task` parameter.
+
+Input matches `url_scanner_scan_with_intent`. Output matches `url_scanner_async_scan`.
+
+---
+
+### url_scanner_async_task_status
+
+Compatibility status polling tool for clients that cannot call native `tasks/get`.
+Call this as an ordinary tool only; do not include a native MCP `task` parameter.
+
+#### Input Schema
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+#### Output Schema
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "created_at": "2026-01-18T12:00:00Z",
+  "updated_at": "2026-01-18T12:00:00Z",
+  "ttl_ms": 720000,
+  "poll_interval_ms": 2000
+}
+```
+
+Status values mirror native MCP task semantics: `working`, `completed`, `failed`, `cancelled`.
+
+---
+
+### url_scanner_async_task_result
+
+Compatibility result polling tool for clients that cannot call native `tasks/result`.
+Call this as an ordinary tool only; do not include a native MCP `task` parameter.
+
+#### Input Schema
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+#### Output Schema (Working)
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "result": null,
+  "retry_after_ms": 2000,
+  "message": "Scan still in progress. Call url_scanner_async_task_result again after retry_after_ms."
+}
+```
+
+#### Output Schema (Completed)
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "status_message": "Scan completed successfully",
+  "result": {
+    "risk_score": 0.15,
+    "confidence": 0.92,
+    "analysis_complete": true,
+    "agent_access_directive": "ALLOW",
+    "agent_access_reason": "no_immediate_risk_detected",
+    "intent_alignment": "not_provided"
+  },
+  "retry_after_ms": null,
+  "message": "Scan completed successfully."
+}
+```
+
+When the underlying task failed, was cancelled, or expired, this tool returns the same MCP error semantics as native `tasks/result`.
+
+---
+
 ### tasks/get
 
 Get task status (non-blocking). Task IDs are scoped to the API key that created them.
@@ -363,7 +499,7 @@ Task fields are flattened at the result level (not nested under a `task` key):
 
 Wait for task completion and return the tool result.
 
-**Note:** The server enforces the same wait timeout as direct calls (hosted default **100 seconds**). If the task is still running after this timeout, `tasks/result` returns a JSON-RPC error (`-32603`). Since the client already has the `taskId`, it can fall back to polling with `tasks/get`.
+**Note:** `tasks/result` uses a shorter server-side wait timeout than direct calls (hosted default **30 seconds**). If the task is still running after this timeout, `tasks/result` returns a JSON-RPC error (`-32603`) with `error.data.taskId` and `error.data.pollInterval`. Clients should continue polling with `tasks/get` and call `tasks/result` again once the task is completed.
 
 #### Input Schema
 
@@ -550,9 +686,11 @@ Common cases:
 - `url_scanner_scan` missing `url` → `-32602 Invalid params`
 - `url_scanner_scan_with_intent` missing `url` → `-32602 Invalid params`
 - `url_scanner_scan_with_intent` intent too long (>248 chars) → `-32602 Invalid params`
+- Any `url_scanner_async_*` tool called with a native MCP `task` parameter → `-32602 Invalid params`
 - Queue full → `-32603 Internal error` with `"Server busy: ..."`
 - Per-key task quota exceeded → `-32029` with `"Rate limit exceeded: ..."`
 - Direct-call wait timeout → `-32603` with timeout message and `data.taskId` / `data.pollInterval`
+- `tasks/result` wait timeout → `-32603` with timeout message and `data.taskId` / `data.pollInterval`
 - Invalid `taskId` for `tasks/get`, `tasks/result`, or `tasks/cancel` → `-32602`
 - Task execution failures (failed/expired/cancelled) → JSON-RPC errors with message string
 

@@ -3,7 +3,7 @@
   "name": "ai.preclick/preclick-mcp",
   "title": "PreClick — An MCP-native URL preflight scanning service for autonomous agents.",
   "description": "PreClick scans links for threats and confirms intent match with high accuracy before agents click.",
-  "version": "0.3.2",
+  "version": "0.3.5",
   "websiteUrl": "https://preclick.ai",
   "publisher": {
     "name": "CybrLab.ai",
@@ -34,7 +34,7 @@
   "tools": [
     {
       "name": "url_scanner_scan",
-      "description": "Analyze a URL for security threats including phishing, malware, and suspicious patterns. Supports direct (sync) and task-augmented (async) execution. Returns risk score, confidence, agent access guidance, and intent_alignment (always not_provided for this tool; use url_scanner_scan_with_intent for intent context).",
+      "description": "Analyze a URL for security threats including phishing, malware, and suspicious patterns. Supports direct (sync) and task-augmented (async) execution. Returns risk score, confidence, agent access guidance, and intent_alignment (always not_provided for this tool; use url_scanner_scan_with_intent for intent context). For clients without native MCP Tasks support, see url_scanner_async_scan.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -53,7 +53,7 @@
     },
     {
       "name": "url_scanner_scan_with_intent",
-      "description": "Analyze a URL for security threats with optional user intent context. Supports direct (sync) and task-augmented (async) execution. Use when the user states their purpose (e.g., login, purchase, booking) so intent/content mismatch can be considered as an additional signal. Returns risk score, confidence, agent access guidance, and intent_alignment.",
+      "description": "Analyze a URL for security threats with optional user intent context. Supports direct (sync) and task-augmented (async) execution. Use when the user states their purpose (e.g., login, purchase, booking) so intent/content mismatch can be considered as an additional signal. Returns risk score, confidence, agent access guidance, and intent_alignment. For clients without native MCP Tasks support, see url_scanner_async_scan_with_intent.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -72,6 +72,86 @@
           }
         },
         "required": ["url"]
+      }
+    },
+    {
+      "name": "url_scanner_async_scan",
+      "description": "Submit a URL for asynchronous security analysis and return immediately with a task_id. Poll with url_scanner_async_task_status or url_scanner_async_task_result. Compatibility wrapper for clients without native MCP Tasks support. Call as an ordinary tool without a native MCP task parameter.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL to analyze. Must be HTTP or HTTPS. If no scheme provided, https:// is assumed."
+          }
+        },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "url_scanner_async_scan_with_intent",
+      "description": "Submit a URL with optional user intent for asynchronous security analysis and return immediately with a task_id. Poll with url_scanner_async_task_status or url_scanner_async_task_result. Compatibility wrapper for clients without native MCP Tasks support. Call as an ordinary tool without a native MCP task parameter.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL to analyze. Must be HTTP or HTTPS. If no scheme provided, https:// is assumed."
+          },
+          "intent": {
+            "type": "string",
+            "description": "User's stated purpose for visiting the URL (e.g., 'login to email', 'book a hotel', 'download software'). Max 248 characters."
+          }
+        },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "url_scanner_async_task_status",
+      "description": "Check the status of an asynchronous scan task using native MCP task semantics (working, completed, failed, cancelled). Compatibility wrapper for clients without native MCP Tasks support. Call as an ordinary tool without a native MCP task parameter.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "The task ID returned by url_scanner_async_scan or url_scanner_async_scan_with_intent."
+          }
+        },
+        "required": ["task_id"]
+      }
+    },
+    {
+      "name": "url_scanner_async_task_result",
+      "description": "Retrieve the result of an asynchronous scan task. Returns a working status while the task is still running, the final scan result when completed, or an MCP error when the underlying task failed/cancelled/expired. Compatibility wrapper for clients without native MCP Tasks support. Call as an ordinary tool without a native MCP task parameter.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "The task ID returned by url_scanner_async_scan or url_scanner_async_scan_with_intent."
+          }
+        },
+        "required": ["task_id"]
       }
     }
   ],

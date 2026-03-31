@@ -190,9 +190,13 @@ When `intent_alignment` is `misaligned` and confirmed by successful high-confide
 When high-confidence analysis confirms an unverified high-impact service claim with weak identity corroboration in a low-confidence context, the response directive is also `DENY` with reason `insufficient_service_verification` (policy gate; risk score is unchanged).
 In additional contextual low-evidence policy cases, responses may return `DENY` with reasons such as `insufficient_service_verification` or `insufficient_trust_signals` (policy gate; risk score is unchanged).
 
-Direct-call timeout note: synchronous tool calls use a bounded server wait window (hosted default 100s). If timeout is reached, the server returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval` so you can continue via `tasks/get` / `tasks/result`.
+Direct-call timeout note: synchronous tool calls use a bounded server wait window sized for direct-only clients (hosted default 90s). If timeout is reached, the server returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval` so you can continue via `tasks/get` / `tasks/result`.
+
+Compatibility note: if your MCP client cannot call native Tasks methods (`tasks/get` / `tasks/result`), use `url_scanner_async_scan` or `url_scanner_async_scan_with_intent` to submit work and then poll with `url_scanner_async_task_status` / `url_scanner_async_task_result`. Call these compatibility tools as ordinary tools only; do not include a native MCP `task` parameter.
 
 ### 4. Poll for Results
+
+`tasks/result` uses a shorter hosted blocking wait (default 30s). If this wait is exceeded, the server returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval`. Native Tasks clients should prefer polling with `tasks/get` until status is `completed`, then call `tasks/result` to retrieve the final result immediately.
 
 ```bash
 curl -X POST https://preclick.ai/mcp \
@@ -232,10 +236,14 @@ Response (completed task — CallToolResult shape, same as synchronous `tools/ca
 
 ## Available Tools
 
-| Tool                           | Description                              | Execution Modes             |
-|--------------------------------|------------------------------------------|-----------------------------|
-| `url_scanner_scan`             | Analyze URL for security threats         | Direct (sync), Task (async) |
-| `url_scanner_scan_with_intent` | Analyze URL with optional intent context | Direct (sync), Task (async) |
+| Tool                                 | Description                              | Execution Modes             |
+|--------------------------------------|------------------------------------------|-----------------------------|
+| `url_scanner_scan`                   | Analyze URL for security threats         | Direct (sync), Task (async) |
+| `url_scanner_scan_with_intent`       | Analyze URL with optional intent context | Direct (sync), Task (async) |
+| `url_scanner_async_scan`             | Compatibility async submit tool          | Tool-based async            |
+| `url_scanner_async_scan_with_intent` | Compatibility async submit with intent   | Tool-based async            |
+| `url_scanner_async_task_status`      | Compatibility status polling tool        | Tool-based async            |
+| `url_scanner_async_task_result`      | Compatibility result polling tool        | Tool-based async            |
 
 See [Full API Documentation](docs/API.md) for detailed schemas and examples.
 

@@ -192,7 +192,7 @@ Intent max length: 248 characters. Low-information strings (e.g., "test", "n/a")
 
 ## Typical scan duration
 
-- Typical scan time: 30-90 seconds (varies by target)
+- Typical scan time: around 70-80 seconds on current production traffic
 
 Plan for an async workflow. Do not block the user while waiting — show progress updates.
 
@@ -201,12 +201,13 @@ Plan for an async workflow. Do not block the user while waiting — show progres
 - **Using `risk_score` alone for decisions.** Always use `agent_access_directive` (`ALLOW` / `DENY` / `RETRY_LATER` / `REQUIRE_CREDENTIALS`). The directive already incorporates risk score, confidence, policy gates, and intent alignment into a single actionable decision.
 - **Displaying `agent_access_reason` to end users.** Reason codes are machine-readable identifiers for logging and programmatic logic, not user-friendly labels. Show the directive, not the reason.
 - **Ignoring `RETRY_LATER`.** A `RETRY_LATER` directive means a transient failure (connection error, rate limit, server error at the destination). Retry after a short delay instead of treating it as `DENY`.
-- **Omitting `task` parameter on HTTP transport.** Without it, direct calls block up to 100 seconds and may time out. Always include `"task": { "ttl": 720000 }` for production use.
+- **Omitting `task` parameter on HTTP transport.** Without it, direct calls may block up to 90 seconds and still require the client to keep the connection open. Always include `"task": { "ttl": 720000 }` for production use when your client supports native Tasks.
+- **Using a client without native MCP Tasks support.** If the client cannot call `tasks/get` / `tasks/result`, use the compatibility tools: `url_scanner_async_scan`, `url_scanner_async_scan_with_intent`, `url_scanner_async_task_status`, and `url_scanner_async_task_result`. Call these as ordinary tools only; do not include a native MCP `task` parameter.
 
 ## Error handling
 
 - **Queue full / rate limit**: JSON-RPC errors `-32603` or `-32029` — retry after a short delay
-- **Direct-call timeout**: If not using `task` parameter, calls time out after 100 seconds; the error includes a `taskId` for recovery polling
+- **Direct-call timeout**: If not using `task` parameter, calls time out after 90 seconds; the error includes a `taskId` for recovery polling
 - **Task failure**: `tasks/get` returns `status: "failed"` — report a generic error to the user
 
 ## References

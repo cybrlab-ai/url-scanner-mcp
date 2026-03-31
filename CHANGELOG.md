@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.5 — 2026-03-31
+
+- Added structured recovery data to native `tasks/result` wait timeouts:
+  - `error.data.taskId`
+  - `error.data.pollInterval`
+- Documented the `tasks/result` timeout payload across public and operational MCP docs
+
+## 0.3.4 — 2026-03-31
+
+- Split blocking wait behavior by client flow:
+  - synchronous direct calls now use a longer hosted default wait of 90 seconds
+  - `tasks/result` now uses a shorter hosted default wait of 30 seconds
+
+## 0.3.3 — 2026-03-31
+
+- Added compatibility async tools for MCP clients without native Tasks support:
+  - `url_scanner_async_scan`
+  - `url_scanner_async_scan_with_intent`
+  - `url_scanner_async_task_status`
+  - `url_scanner_async_task_result`
+
 ## 0.3.2 — 2026-03-29
 
 - Clarified hosted stateless transport behavior: `GET /mcp` returns HTTP `405 Method Not Allowed` because the endpoint does not offer an SSE stream in stateless mode.
