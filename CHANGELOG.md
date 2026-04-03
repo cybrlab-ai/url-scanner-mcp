@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.6 — 2026-04-03
+
+- Fixed `initialize` server identity to match the published MCP manifest instead of leaking rmcp SDK metadata.
+- Narrowed hosted protocol-version compatibility behavior:
+  - discovery-only POST list requests without `MCP-Protocol-Version` may still succeed for registry scanning
+  - operational requests remain strict and still return HTTP 400 when the header is missing
+
 ## 0.3.5 — 2026-03-31
 
 - Added structured recovery data to native `tasks/result` wait timeouts:

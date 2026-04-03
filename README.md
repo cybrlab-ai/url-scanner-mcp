@@ -87,7 +87,7 @@ Clients should still send the standard MCP HTTP headers:
 - `Accept: application/json, text/event-stream` on POST
 - `MCP-Protocol-Version` on all non-initialize requests
 
-The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should not rely on that behavior.
+The hosted deployment currently normalizes missing or incomplete POST `Accept` headers for compatibility. It also allows missing `MCP-Protocol-Version` on discovery-only POST list requests (`tools/list`, `resources/list`, `prompts/list`) for registry compatibility. Clients should not rely on either behavior.
 
 ```bash
 # Only required if the server is running in stateful mode

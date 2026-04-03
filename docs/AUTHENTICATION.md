@@ -37,7 +37,7 @@ Clients should still send:
 - `Accept: application/json, text/event-stream` on POST
 - `MCP-Protocol-Version` on all non-initialize requests
 
-The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should not rely on that behavior.
+The hosted deployment currently normalizes missing or incomplete POST `Accept` headers for compatibility. It also allows missing `MCP-Protocol-Version` only on discovery-only POST list requests (`tools/list`, `resources/list`, `prompts/list`) for registry compatibility. Clients should not rely on either behavior.
 
 ### curl Example (Initialize Session - stateful mode only)
 
@@ -63,7 +63,7 @@ curl -X POST https://preclick.ai/mcp \
 ### curl Example (Subsequent Requests - stateful mode only)
 
 ```bash
-# All non-initialize requests require protocol version; session ID is required only in stateful mode
+# All operational non-initialize requests require protocol version; session ID is required only in stateful mode
 curl -X POST https://preclick.ai/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \

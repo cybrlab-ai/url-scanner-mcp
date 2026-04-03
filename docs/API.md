@@ -85,7 +85,8 @@ X-API-Key: your-api-key-here
 
 Notes:
 - The hosted deployment is stateless by default, so `GET /mcp` is not used for normal operation.
-- The hosted deployment currently normalizes missing or incomplete POST `Accept` / `MCP-Protocol-Version` headers for compatibility. Clients should still send the standard MCP headers and must not rely on normalization.
+- The hosted deployment currently normalizes missing or incomplete POST `Accept` headers for compatibility.
+- The hosted deployment also allows missing `MCP-Protocol-Version` only on discovery-only POST list requests (`tools/list`, `resources/list`, `prompts/list`) for registry compatibility. Clients should still send the standard MCP headers and must not rely on this fallback.
 
 ### Session Management
 
