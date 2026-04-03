@@ -5,34 +5,32 @@ license: Apache-2.0
 compatibility: Requires an MCP client with Streamable HTTP transport support and network access to https://preclick.ai/mcp
 metadata:
   author: cybrlab-ai
-  version: 0.3.2
+  version: 0.3.6
   service: preclick.ai
   registry-id: ai.preclick/preclick-mcp
 ---
 
 # PreClick
 
-PreClick is an intent-aware secure browsing and decision layer for AI agents. Use it to verify a destination before navigation, evaluate both risk and task alignment, and obtain an explicit access decision before an agent proceeds.
+PreClick is an intent-aware secure browsing and decision layer for AI agents. Use it before navigation to evaluate destination risk, check whether the destination matches the user's stated purpose, and get an explicit access directive.
 
 ## When to use this skill
 
-- A user shares a URL and asks whether it is safe
+- A user shares a URL and asks whether it is safe to open
 - Before navigating to any user-provided, externally sourced, or unfamiliar link
-- When a workflow requires URL preflight validation
 - When checking shortened, obfuscated, or unfamiliar URLs
-- Before clicking any link from an email, chat message, or untrusted source
-- When browsing results contain unfamiliar domains
-- When an agent autonomously discovers a URL it has not visited before
+- Before opening links found in email, chat, documents, or search results
+- When an agent discovers a new domain during a workflow
 
 ## When NOT to use this skill
 
-- There is no URL or destination to evaluate
+- There is no URL to evaluate
 - The workflow does not involve opening or checking a web destination
 - A fresh PreClick decision already exists for the exact same URL and intent in the current workflow step
 
 ## Prerequisites
 
-The PreClick MCP server must be configured in your MCP client settings:
+Configure the PreClick MCP server in your MCP client:
 
 ```json
 {
@@ -45,78 +43,187 @@ The PreClick MCP server must be configured in your MCP client settings:
 }
 ```
 
-No API key is required for the hosted trial tier (up to 100 requests/day). For higher limits, add an `X-API-Key` header.
+Hosted trial access does not require an API key for up to 100 requests/day. For higher limits, send `X-API-Key`.
 
-## Command-line examples
+## Available tools
 
-Start a task-augmented scan:
+PreClick exposes six public tools:
 
-```bash
-curl -X POST https://preclick.ai/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "MCP-Protocol-Version: 2025-06-18" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/call",
-    "params": {
-      "name": "url_scanner_scan",
-      "arguments": { "url": "https://example.com" },
-      "task": { "ttl": 720000 }
-    }
-  }'
+| Tool                                 | Purpose                                                   | Best fit                     |
+|--------------------------------------|-----------------------------------------------------------|------------------------------|
+| `url_scanner_scan`                   | Scan a URL without intent context                         | Native Tasks clients         |
+| `url_scanner_scan_with_intent`       | Scan a URL with user intent context                       | Native Tasks clients         |
+| `url_scanner_async_scan`             | Submit a scan and get `task_id` immediately               | Clients without native Tasks |
+| `url_scanner_async_scan_with_intent` | Submit an intent-aware scan and get `task_id` immediately | Clients without native Tasks |
+| `url_scanner_async_task_status`      | Poll async task status                                    | Clients without native Tasks |
+| `url_scanner_async_task_result`      | Fetch async task result                                   | Clients without native Tasks |
+
+## Recommended agent workflow
+
+Use an async workflow by default. Typical scan time is around 70-80 seconds on current production traffic.
+
+Choose the approach that matches the MCP client:
+
+- Use the compatibility tools when the client can call tools by name but cannot call native MCP `tasks/*` methods
+- Use native MCP Tasks only when the client supports `task` on `tools/call` and can call `tasks/get` and `tasks/result`
+
+For both approaches, use the same high-level loop:
+
+1. Submit the scan
+2. Wait for the recommended poll interval
+3. Poll task status until the task is terminal
+4. Fetch or read the final result
+5. Decide using `agent_access_directive`, not `risk_score` alone
+
+Do not block the user silently while waiting. Show progress updates during polling.
+
+## Approach A: Compatibility tools
+
+This is the safest default for agents that do not implement native MCP Tasks.
+
+### Step 1: Pick the submit tool
+
+| Tool | When to use |
+|------|-------------|
+| `url_scanner_async_scan` | No useful user intent is available |
+| `url_scanner_async_scan_with_intent` | The user has stated their purpose, such as login, purchase, booking, payment, or download |
+
+### Step 2: Submit the scan
+
+Standard scan:
+
+```json
+{
+  "name": "url_scanner_async_scan",
+  "arguments": {
+    "url": "https://example.com"
+  }
+}
 ```
 
-Scan with intent context:
+Intent-aware scan:
 
-```bash
-curl -X POST https://preclick.ai/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "MCP-Protocol-Version: 2025-06-18" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "tools/call",
-    "params": {
-      "name": "url_scanner_scan_with_intent",
-      "arguments": {
-        "url": "https://example.com/login",
-        "intent": "Log into my email account"
-      },
-      "task": { "ttl": 720000 }
-    }
-  }'
+```json
+{
+  "name": "url_scanner_async_scan_with_intent",
+  "arguments": {
+    "url": "https://example.com/login",
+    "intent": "Log into my account"
+  }
+}
 ```
 
-Poll for the final result:
+Expected submit response shape:
 
-```bash
-curl -X POST https://preclick.ai/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "MCP-Protocol-Version: 2025-06-18" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "tasks/result",
-    "params": { "taskId": "YOUR_TASK_ID" }
-  }'
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "created_at": "2026-01-18T12:00:00Z",
+  "updated_at": "2026-01-18T12:00:00Z",
+  "ttl_ms": 720000,
+  "poll_interval_ms": 2000,
+  "message": "Scan submitted. Poll with url_scanner_async_task_status or url_scanner_async_task_result."
+}
 ```
 
-## How to scan a URL
+Do not include a native MCP `task` parameter when calling any `url_scanner_async_*` tool.
 
-### Step 1: Choose the right tool
+### Step 3: Poll status first
 
-| Tool                           | When to use                                                         |
-|--------------------------------|---------------------------------------------------------------------|
-| `url_scanner_scan`             | Standard scan (no intent context available)                         |
-| `url_scanner_scan_with_intent` | When the user has stated their purpose (login, purchase, booking)   |
+Wait for `poll_interval_ms`, then poll status:
 
-### Step 2: Start a task-augmented scan (recommended)
+```json
+{
+  "name": "url_scanner_async_task_status",
+  "arguments": {
+    "task_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
 
-Call the tool with a `task` parameter for async execution:
+Expected status response shape:
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "created_at": "2026-01-18T12:00:00Z",
+  "updated_at": "2026-01-18T12:00:00Z",
+  "ttl_ms": 720000,
+  "poll_interval_ms": 2000
+}
+```
+
+Status values mirror MCP task semantics:
+
+- `working`
+- `completed`
+- `failed`
+- `cancelled`
+
+Preferred loop:
+
+1. Call `url_scanner_async_task_status`
+2. If status is `working`, wait `poll_interval_ms` and poll again
+3. If status is `completed`, call `url_scanner_async_task_result`
+4. If status is `failed` or `cancelled`, treat the task as unsuccessful and report a generic failure
+
+### Step 4: Fetch the final result
+
+```json
+{
+  "name": "url_scanner_async_task_result",
+  "arguments": {
+    "task_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+If the task is still running, the result tool returns:
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "status_message": "Queued for processing",
+  "result": null,
+  "retry_after_ms": 2000,
+  "message": "Scan still in progress. Call url_scanner_async_task_result again after retry_after_ms."
+}
+```
+
+If the task is completed, the result tool returns:
+
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "status_message": "Scan completed successfully",
+  "result": {
+    "risk_score": 0.15,
+    "confidence": 0.92,
+    "analysis_complete": true,
+    "agent_access_directive": "ALLOW",
+    "agent_access_reason": "no_immediate_risk_detected",
+    "intent_alignment": "not_provided"
+  },
+  "retry_after_ms": null,
+  "message": "Scan completed successfully."
+}
+```
+
+If the underlying task failed, was cancelled, or expired, `url_scanner_async_task_result` returns an MCP error rather than a normal result payload.
+
+## Approach B: Native MCP Tasks
+
+Use this only when the client supports native task submission and polling.
+
+### Step 1: Start a task-augmented scan
+
+Standard scan:
 
 ```json
 {
@@ -135,83 +242,309 @@ Call the tool with a `task` parameter for async execution:
 }
 ```
 
-The response includes a `taskId` and `pollInterval`.
+Intent-aware scan:
 
-### Step 3: Poll for results
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "url_scanner_scan_with_intent",
+    "arguments": {
+      "url": "https://example.com/login",
+      "intent": "Log into my account"
+    },
+    "task": {
+      "ttl": 720000
+    }
+  }
+}
+```
 
-Use `tasks/get` to check status, then `tasks/result` to retrieve the final result:
+Expected task handle shape:
+
+```json
+{
+  "task": {
+    "taskId": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "working",
+    "statusMessage": "Queued for processing",
+    "createdAt": "2026-01-18T12:00:00Z",
+    "lastUpdatedAt": "2026-01-18T12:00:00Z",
+    "ttl": 720000,
+    "pollInterval": 2000
+  }
+}
+```
+
+### Step 2: Poll with `tasks/get`
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 2,
-  "method": "tasks/result",
+  "method": "tasks/get",
   "params": {
-    "taskId": "<taskId from step 2>"
+    "taskId": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
 
-### Step 4: Interpret the result
-
-The result contains:
-
-| Field                    | Type   | How to use                                                                           |
-|--------------------------|--------|--------------------------------------------------------------------------------------|
-| `agent_access_directive` | string | **Primary decision field.** `ALLOW`, `DENY`, `RETRY_LATER`, or `REQUIRE_CREDENTIALS` |
-| `risk_score`             | number | 0.0 (safe) to 1.0 (dangerous) — supplementary detail                                 |
-| `confidence`             | number | Confidence (0.0–1.0)                                                                 |
-| `agent_access_reason`    | string | Machine-readable reason code                                                         |
-| `intent_alignment`       | string | `misaligned`, `no_mismatch_detected`, `inconclusive`, or `not_provided`              |
-
-**Decision logic:**
-
-- `ALLOW` → Safe to proceed
-- `DENY` → Do not navigate (threat detected, invalid URL, or insufficient evidence)
-- `RETRY_LATER` → Temporary failure (connection error, rate limited) — retry after a delay
-- `REQUIRE_CREDENTIALS` → The destination requires authentication
-
-Always use `agent_access_directive` for access decisions, not `risk_score` alone.
-
-## Using intent context
-
-When the user states their purpose, use `url_scanner_scan_with_intent` for better detection:
+Expected status response shape:
 
 ```json
 {
-  "name": "url_scanner_scan_with_intent",
-  "arguments": {
-    "url": "https://example.com/login",
-    "intent": "Log into my email account"
-  },
-  "task": { "ttl": 720000 }
+  "taskId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "working",
+  "statusMessage": "Queued for processing",
+  "createdAt": "2026-01-18T12:00:00Z",
+  "lastUpdatedAt": "2026-01-18T12:00:00Z",
+  "ttl": 720000,
+  "pollInterval": 2000
 }
 ```
 
-Intent max length: 248 characters. Low-information strings (e.g., "test", "n/a") are treated as not provided.
+Preferred loop:
 
-## Typical scan duration
+1. Call `tasks/get`
+2. If status is `working`, wait `pollInterval` and poll again
+3. If status is `completed`, call `tasks/result`
+4. If status is `failed` or `cancelled`, treat the task as unsuccessful and report a generic failure
 
-- Typical scan time: around 70-80 seconds on current production traffic
+### Step 3: Fetch the final result
 
-Plan for an async workflow. Do not block the user while waiting — show progress updates.
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tasks/result",
+  "params": {
+    "taskId": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+Successful `tasks/result` responses use the normal `CallToolResult` shape:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"risk_score\":0.15,\"confidence\":0.92,\"analysis_complete\":true,\"agent_access_directive\":\"ALLOW\",\"agent_access_reason\":\"no_immediate_risk_detected\",\"intent_alignment\":\"not_provided\"}"
+    }
+  ],
+  "isError": false
+}
+```
+
+Important native-task caveat:
+
+- `tasks/result` can wait, but on the hosted deployment it uses a shorter wait timeout than direct calls
+- If the task is still running when that wait expires, `tasks/result` returns JSON-RPC `-32603` with `error.data.taskId` and `error.data.pollInterval`
+- When that happens, continue polling with `tasks/get` and retry `tasks/result` only after the task is completed
+
+## Normalize the result
+
+The final decision fields are the same across both approaches, but the envelope differs:
+
+- Compatibility tools: read the result from `result`
+- Native Tasks: parse the JSON string in `content[0].text`
+
+Normalize to these fields before making a decision:
+
+- `risk_score`
+- `confidence`
+- `analysis_complete`
+- `agent_access_directive`
+- `agent_access_reason`
+- `intent_alignment`
+
+## Decision rules
+
+Always use `agent_access_directive` as the primary decision field.
+
+| Directive | Meaning |
+|-----------|---------|
+| `ALLOW` | Safe to proceed |
+| `DENY` | Do not navigate |
+| `RETRY_LATER` | Temporary failure; retry after a delay |
+| `REQUIRE_CREDENTIALS` | Destination requires authentication |
+
+`risk_score` is supplementary detail. Do not treat it as the final access decision by itself.
+
+## Intent alignment values
+
+When using an intent-aware tool, the result includes `intent_alignment`:
+
+| Value                  | Meaning                                                        |
+|------------------------|----------------------------------------------------------------|
+| `misaligned`           | Page purpose conflicts with the stated intent                  |
+| `no_mismatch_detected` | No mismatch signal detected from available evidence            |
+| `inconclusive`         | Evidence is limited or intent cannot be verified reliably      |
+| `not_provided`         | No intent was supplied (or low-information input was ignored)  |
+
+When `intent_alignment` is `misaligned`, `agent_access_directive` is set to `DENY` even if `risk_score` is low.
+
+## Intent guidance
+
+Use the intent-aware variant when the user states a concrete purpose:
+
+- Compatibility tools: `url_scanner_async_scan_with_intent`
+- Native Tasks: `url_scanner_scan_with_intent`
+
+Intent examples:
+
+- `"Log into my account"`
+- `"Pay an invoice"`
+- `"Download a document"`
+- `"Book a reservation"`
+
+Intent max length is 248 characters. Low-information strings such as `"test"` or `"n/a"` are treated as not provided.
+
+## Command-line examples
+
+### Compatibility tools
+
+Submit a scan:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "url_scanner_async_scan",
+      "arguments": {
+        "url": "https://example.com"
+      }
+    }
+  }'
+```
+
+Poll status:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "url_scanner_async_task_status",
+      "arguments": {
+        "task_id": "YOUR_TASK_ID"
+      }
+    }
+  }'
+```
+
+Fetch final result:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "url_scanner_async_task_result",
+      "arguments": {
+        "task_id": "YOUR_TASK_ID"
+      }
+    }
+  }'
+```
+
+### Native Tasks
+
+Start a task-augmented scan:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "url_scanner_scan",
+      "arguments": {
+        "url": "https://example.com"
+      },
+      "task": {
+        "ttl": 720000
+      }
+    }
+  }'
+```
+
+Poll task status:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tasks/get",
+    "params": {
+      "taskId": "YOUR_TASK_ID"
+    }
+  }'
+```
+
+Fetch final result:
+
+```bash
+curl -X POST https://preclick.ai/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tasks/result",
+    "params": {
+      "taskId": "YOUR_TASK_ID"
+    }
+  }'
+```
 
 ## Common pitfalls
 
-- **Using `risk_score` alone for decisions.** Always use `agent_access_directive` (`ALLOW` / `DENY` / `RETRY_LATER` / `REQUIRE_CREDENTIALS`). The directive already incorporates risk score, confidence, policy gates, and intent alignment into a single actionable decision.
-- **Displaying `agent_access_reason` to end users.** Reason codes are machine-readable identifiers for logging and programmatic logic, not user-friendly labels. Show the directive, not the reason.
-- **Ignoring `RETRY_LATER`.** A `RETRY_LATER` directive means a transient failure (connection error, rate limit, server error at the destination). Retry after a short delay instead of treating it as `DENY`.
-- **Omitting `task` parameter on HTTP transport.** Without it, direct calls may block up to 90 seconds and still require the client to keep the connection open. Always include `"task": { "ttl": 720000 }` for production use when your client supports native Tasks.
-- **Using a client without native MCP Tasks support.** If the client cannot call `tasks/get` / `tasks/result`, use the compatibility tools: `url_scanner_async_scan`, `url_scanner_async_scan_with_intent`, `url_scanner_async_task_status`, and `url_scanner_async_task_result`. Call these as ordinary tools only; do not include a native MCP `task` parameter.
+- Using `risk_score` alone for decisions instead of `agent_access_directive`
+- Calling `url_scanner_async_*` tools with a native MCP `task` parameter
+- Using `tasks/result` as the primary polling loop instead of `tasks/get`
+- Forgetting that native `tasks/result` returns a `CallToolResult` envelope, not a direct result object
+- Forgetting that compatibility result polling can return an MCP error when the underlying task failed, was cancelled, or expired
+- Omitting the `task` parameter when using native Tasks on HTTP transport
 
 ## Error handling
 
-- **Queue full / rate limit**: JSON-RPC errors `-32603` or `-32029` — retry after a short delay
-- **Direct-call timeout**: If not using `task` parameter, calls time out after 90 seconds; the error includes a `taskId` for recovery polling
-- **Task failure**: `tasks/get` returns `status: "failed"` — report a generic error to the user
+- Queue saturation may return JSON-RPC `-32603`
+- Per-key task quota exhaustion may return JSON-RPC `-32029`
+- Native `tasks/result` may return JSON-RPC `-32603` when its wait timeout expires before completion
+- Direct synchronous calls without `task` may time out after the hosted wait window; prefer async workflows
+- For task failure, cancellation, or expiry, report a generic failure to the user and avoid exposing raw machine-oriented internals unless needed for debugging
 
 ## References
 
-- [API Documentation](https://github.com/cybrlab-ai/preclick-mcp/blob/main/docs/API.md) — Full schema and error code reference
-- [Authentication Guide](https://github.com/cybrlab-ai/preclick-mcp/blob/main/docs/AUTHENTICATION.md) — API key setup
-- [README](https://github.com/cybrlab-ai/preclick-mcp/blob/main/README.md) — Quick start and configuration
+- [API Documentation](https://github.com/cybrlab-ai/preclick-mcp/blob/main/docs/API.md)
+- [Authentication Guide](https://github.com/cybrlab-ai/preclick-mcp/blob/main/docs/AUTHENTICATION.md)
+- [README](https://github.com/cybrlab-ai/preclick-mcp/blob/main/README.md)
