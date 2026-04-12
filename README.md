@@ -12,17 +12,30 @@
 
 ## Overview
 
-PreClick is an MCP server that enables AI agents and any MCP-compatible client to analyze URLs for malicious content and security threats before navigation.
+PreClick is a URL security scanner and MCP server that enables AI agents and any client to analyze URLs for phishing, malware, and other security threats before navigation. Use it as a standalone URL scanner via the client libraries below, or connect directly via the MCP protocol.
 
 ## Integrations
 
-PreClick works with any MCP-compatible client. For framework-specific adapters:
+### Client Libraries (Recommended)
+
+The fastest way to add URL security scanning to any AI agent, automation pipeline, or application. These standalone URL scanner clients handle connection, polling, and error recovery out of the box — no MCP protocol knowledge or conformance required:
+
+| Package                        | Language                 | Install                                    | Repository                                                               |
+|--------------------------------|--------------------------|--------------------------------------------|--------------------------------------------------------------------------|
+| `preclick`                     | Python (async, 3.10+)    | `pip install preclick`                     | [preclick-python](https://github.com/cybrlab-ai/preclick-python)         |
+| `@cybrlab/preclick-mcp-client` | JavaScript/Node.js (20+) | `npm install @cybrlab/preclick-mcp-client` | [preclick-mcp-client](https://github.com/cybrlab-ai/preclick-mcp-client) |
+
+Both libraries provide a simple scan-oriented URL security scanning API (`scan(url)` / `scanWithIntent(url, intent)`) that returns results directly — phishing detection, threat analysis, and intent alignment in a single call. No protocol vocabulary, no `connect()` boilerplate, no manual polling for the common case.
+
+### Framework Adapters
 
 | Integration           | Repository                                                             |
 |-----------------------|------------------------------------------------------------------------|
 | OpenClaw plugin       | [preclick-openclaw](https://github.com/cybrlab-ai/preclick-openclaw)   |
 
-For manual MCP bridge configuration (any client), see [Quick Start](#quick-start) below.
+### Manual MCP Configuration
+
+For MCP-native clients that speak the protocol directly, see [Quick Start](#quick-start) below.
 
 ## Authentication Modes
 
